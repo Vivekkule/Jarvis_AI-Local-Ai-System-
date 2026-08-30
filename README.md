@@ -6,7 +6,7 @@
 
 ## Demo
 
-![JARVIS UI](C:\Users\vivek\jarvis-ai\image.png)
+![JARVIS UI](image.png)
 
 > Dark-themed Jarvis-style web interface with real-time chat, voice input, model switching, and live web search.
 
