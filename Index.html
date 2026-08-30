@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>JARVIS — Personal AI</title>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@300;400;500;600;700&family=Share+Tech+Mono&family=Orbitron:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:#030712;--bg2:#0a0f1e;--bg3:#0f172a;
+    --border:rgba(56,189,248,0.15);--border2:rgba(56,189,248,0.35);
+    --accent:#38bdf8;--accent2:#0ea5e9;--accent3:#7dd3fc;
+    --glow:rgba(56,189,248,0.2);--glow2:rgba(56,189,248,0.06);
+    --text:#e2e8f0;--text2:#94a3b8;--text3:#475569;
+    --red:#f87171;--green:#4ade80;--amber:#fbbf24;
+    --font-d:'Orbitron',monospace;--font-ui:'Rajdhani',sans-serif;
+    --font-mono:'Share Tech Mono',monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--text);font-family:var(--font-ui);height:100vh;overflow:hidden;display:flex;flex-direction:column}
+  body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(56,189,248,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(56,189,248,0.03) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0}
+  body::after{content:'';position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);width:800px;height:800px;background:radial-gradient(circle,rgba(56,189,248,0.04) 0%,transparent 70%);pointer-events:none;z-index:0}
+  .header{position:relative;z-index:10;display:flex;align-items:center;justify-content:space-between;padding:12px 24px;border-bottom:1px solid var(--border);background:linear-gradient(180deg,rgba(3,7,18,0.97) 0%,rgba(10,15,30,0.85) 100%);backdrop-filter:blur(20px);flex-shrink:0}
+  .header-left{display:flex;align-items:center;gap:14px}
+  .logo-ring{position:relative;width:40px;height:40px}
+  .logo-ring svg{width:40px;height:40px;animation:spin 8s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .logo-core{position:absolute;inset:9px;background:radial-gradient(circle,var(--accent) 0%,var(--accent2) 60%,transparent 100%);border-radius:50%;animation:pulse 2s ease-in-out infinite}
+  @keyframes pulse{0%,100%{opacity:.9;transform:scale(1)}50%{opacity:.5;transform:scale(.8)}}
+  .header-title{font-family:var(--font-d);font-size:20px;font-weight:700;letter-spacing:6px;color:var(--accent);text-shadow:0 0 20px rgba(56,189,248,.5)}
+  .header-sub{font-family:var(--font-mono);font-size:10px;color:var(--text3);letter-spacing:2px;margin-top:1px}
+  .header-right{display:flex;align-items:center;gap:14px}
+  .status-item{display:flex;align-items:center;gap:6px;font-family:var(--font-mono);font-size:11px}
+  .dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+  .dot.online{background:var(--green);box-shadow:0 0 8px var(--green);animation:blink 2s infinite}
+  .dot.offline{background:var(--red);box-shadow:0 0 8px var(--red)}
+  .dot.checking{background:var(--amber);box-shadow:0 0 8px var(--amber);animation:blink .6s infinite}
+  @keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+  .model-sel{background:var(--bg3);border:1px solid var(--border);color:var(--accent);font-family:var(--font-mono);font-size:12px;padding:5px 10px;border-radius:4px;cursor:pointer;outline:none;letter-spacing:1px}
+  .model-sel:focus{border-color:var(--border2)}
+  .clear-btn{background:none;border:1px solid var(--border);color:var(--text3);font-family:var(--font-mono);font-size:11px;padding:5px 12px;border-radius:4px;cursor:pointer;letter-spacing:1px;transition:all .2s}
+  .clear-btn:hover{border-color:var(--red);color:var(--red)}
+  .main{flex:1;display:flex;overflow:hidden;position:relative;z-index:1}
+  .sidebar{width:220px;flex-shrink:0;border-right:1px solid var(--border);background:linear-gradient(180deg,rgba(10,15,30,.6) 0%,rgba(3,7,18,.4) 100%);display:flex;flex-direction:column;padding:16px 0;gap:4px;overflow-y:auto}
+  .sidebar::-webkit-scrollbar{width:3px}
+  .sidebar::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+  .sb-section{padding:0 14px;margin-bottom:10px}
+  .sb-label{font-family:var(--font-mono);font-size:10px;color:var(--text3);letter-spacing:3px;margin-bottom:8px;padding-bottom:5px;border-bottom:1px solid var(--border)}
+  .qbtn{display:flex;align-items:center;gap:8px;width:100%;background:none;border:1px solid transparent;color:var(--text2);font-family:var(--font-ui);font-size:13px;font-weight:500;padding:7px 10px;border-radius:5px;cursor:pointer;text-align:left;transition:all .15s;letter-spacing:.3px;margin-bottom:2px}
+  .qbtn:hover{background:var(--glow2);border-color:var(--border);color:var(--accent3)}
+  .qbtn .qi{font-size:15px;flex-shrink:0}
+  .stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+  .stat-box{background:var(--glow2);border:1px solid var(--border);border-radius:5px;padding:8px;text-align:center}
+  .stat-val{font-family:var(--font-mono);font-size:17px;color:var(--accent);line-height:1}
+  .stat-lbl{font-size:10px;color:var(--text3);letter-spacing:1px;margin-top:2px}
+  .info-row{font-family:var(--font-mono);font-size:11px;color:var(--text3);line-height:1.9;letter-spacing:.5px}
+  .chat-area{flex:1;display:flex;flex-direction:column;overflow:hidden}
+  .messages{flex:1;overflow-y:auto;padding:24px 28px;display:flex;flex-direction:column;gap:18px;scroll-behavior:smooth}
+  .messages::-webkit-scrollbar{width:4px}
+  .messages::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+  .welcome{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:40px;text-align:center;animation:fadeIn .5s ease}
+  @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+  .welcome-ring{position:relative;width:90px;height:90px;margin-bottom:6px}
+  .welcome-ring svg{width:90px;height:90px;animation:spin 12s linear infinite}
+  .welcome-core{position:absolute;inset:16px;border-radius:50%;background:radial-gradient(circle,rgba(56,189,248,.3) 0%,transparent 70%);animation:pulse 2.5s ease-in-out infinite}
+  .welcome h2{font-family:var(--font-d);font-size:26px;font-weight:700;color:var(--accent);letter-spacing:8px;text-shadow:0 0 30px rgba(56,189,248,.4)}
+  .welcome p{font-family:var(--font-mono);font-size:12px;color:var(--text3);letter-spacing:1px;max-width:380px;line-height:1.9}
+  .chips{display:flex;flex-wrap:wrap;gap:7px;justify-content:center;margin-top:6px;max-width:560px}
+  .chip{background:var(--glow2);border:1px solid var(--border);color:var(--text2);font-family:var(--font-mono);font-size:11px;padding:6px 13px;border-radius:20px;cursor:pointer;transition:all .2s;letter-spacing:.5px}
+  .chip:hover{background:var(--glow);border-color:var(--accent);color:var(--accent);transform:translateY(-1px)}
+  .msg{display:flex;gap:12px;align-items:flex-start;animation:slideUp .25s ease;max-width:820px}
+  @keyframes slideUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+  .msg.user{flex-direction:row-reverse;align-self:flex-end}
+  .avatar{width:32px;height:32px;border-radius:5px;display:flex;align-items:center;justify-content:center;font-family:var(--font-d);font-size:9px;font-weight:700;letter-spacing:.5px;flex-shrink:0}
+  .msg.user .avatar{background:rgba(56,189,248,.12);border:1px solid var(--border2);color:var(--accent)}
+  .msg.ai .avatar{background:rgba(56,189,248,.06);border:1px solid var(--border);color:var(--accent3)}
+  .bubble{max-width:calc(100% - 46px);padding:12px 16px;border-radius:8px;font-size:14.5px;line-height:1.75;font-weight:400;letter-spacing:.2px}
+  .msg.user .bubble{background:rgba(56,189,248,.07);border:1px solid var(--border2);border-top-right-radius:2px}
+  .msg.ai .bubble{background:rgba(15,23,42,.6);border:1px solid var(--border);border-top-left-radius:2px}
+  .msg-meta{font-family:var(--font-mono);font-size:10px;color:var(--text3);margin-top:4px;letter-spacing:1px}
+  .msg.user .msg-meta{text-align:right}
+  .bubble pre{background:rgba(3,7,18,.85);border:1px solid var(--border);border-radius:6px;padding:12px 14px;margin:8px 0;overflow-x:auto;font-family:var(--font-mono);font-size:12px;line-height:1.65;color:var(--accent3)}
+  .bubble code{font-family:var(--font-mono);font-size:12.5px;color:var(--accent3);background:rgba(56,189,248,.08);padding:1px 5px;border-radius:3px}
+  .bubble pre code{background:none;padding:0;color:inherit}
+  .bubble strong{color:var(--accent3)}
+  .bubble ul,.bubble ol{margin:6px 0 6px 20px;line-height:1.9}
+  .typing{display:flex;gap:12px;align-items:flex-start;animation:fadeIn .3s ease}
+  .typing-bubble{background:rgba(15,23,42,.6);border:1px solid var(--border);border-radius:8px;border-top-left-radius:2px;padding:13px 18px;display:flex;align-items:center;gap:5px}
+  .tdot{width:6px;height:6px;border-radius:50%;background:var(--accent);animation:tdot 1.2s infinite}
+  .tdot:nth-child(2){animation-delay:.2s}
+  .tdot:nth-child(3){animation-delay:.4s}
+  @keyframes tdot{0%,60%,100%{transform:translateY(0);opacity:.4}30%{transform:translateY(-6px);opacity:1}}
+  .typing-lbl{font-family:var(--font-mono);font-size:11px;color:var(--text3);margin-left:4px;letter-spacing:1px}
+  .input-area{padding:14px 24px 18px;border-top:1px solid var(--border);background:linear-gradient(0deg,rgba(3,7,18,.97) 0%,rgba(10,15,30,.75) 100%);backdrop-filter:blur(20px);flex-shrink:0}
+  .input-row{display:flex;gap:10px;align-items:flex-end}
+  .input-wrap{flex:1;position:relative}
+  textarea{width:100%;background:var(--bg3);border:1px solid var(--border);color:var(--text);font-family:var(--font-ui);font-size:14.5px;letter-spacing:.3px;padding:12px 16px;border-radius:7px;resize:none;outline:none;line-height:1.6;min-height:48px;max-height:150px;transition:border-color .2s;display:block}
+  textarea::placeholder{color:var(--text3);font-family:var(--font-mono);font-size:12px;letter-spacing:1px}
+  textarea:focus{border-color:var(--border2)}
+  .send-btn{width:48px;height:48px;background:linear-gradient(135deg,var(--accent2),var(--accent));border:none;border-radius:7px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .2s;box-shadow:0 0 18px rgba(56,189,248,.3)}
+  .send-btn:hover{transform:scale(1.05);box-shadow:0 0 28px rgba(56,189,248,.5)}
+  .send-btn:active{transform:scale(.97)}
+  .send-btn:disabled{opacity:.4;cursor:not-allowed;transform:none;box-shadow:none}
+  .send-btn svg{width:20px;height:20px;fill:white}
+  .mic-btn{width:48px;height:48px;background:var(--bg3);border:1px solid var(--border);border-radius:7px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .2s;font-size:18px}
+  .mic-btn:hover{border-color:var(--accent)}
+  .mic-btn.listening{border-color:var(--red);animation:blink .5s infinite}
+  .input-footer{margin-top:7px;display:flex;justify-content:space-between}
+  .hint{font-family:var(--font-mono);font-size:10px;color:var(--text3);letter-spacing:1px}
+  .toast{position:fixed;bottom:85px;left:50%;transform:translateX(-50%) translateY(16px);background:rgba(248,113,113,.1);border:1px solid var(--red);color:var(--red);font-family:var(--font-mono);font-size:12px;padding:9px 18px;border-radius:5px;letter-spacing:1px;opacity:0;transition:all .3s;z-index:100;pointer-events:none;white-space:nowrap}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  .scan{position:fixed;top:-100%;left:0;width:100%;height:2px;background:linear-gradient(90deg,transparent,rgba(56,189,248,.12),transparent);animation:scan 7s linear infinite;pointer-events:none;z-index:999}
+  @keyframes scan{to{top:110%}}
+</style>
+</head>
+<body>
+<div class="scan"></div>
+
+<header class="header">
+  <div class="header-left">
+    <div class="logo-ring">
+      <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="20" cy="20" r="18" stroke="rgba(56,189,248,0.3)" stroke-width="1" stroke-dasharray="4 3"/>
+        <circle cx="20" cy="20" r="13" stroke="rgba(56,189,248,0.5)" stroke-width="1" stroke-dasharray="2 4"/>
+        <circle cx="20" cy="3" r="2" fill="#38bdf8"/>
+        <circle cx="37" cy="20" r="2" fill="#38bdf8"/>
+        <circle cx="20" cy="37" r="1.5" fill="rgba(56,189,248,0.4)"/>
+        <circle cx="3" cy="20" r="1.5" fill="rgba(56,189,248,0.4)"/>
+      </svg>
+      <div class="logo-core"></div>
+    </div>
+    <div>
+      <div class="header-title">JARVIS</div>
+      <div class="header-sub">PERSONAL AI · LOCAL · FREE</div>
+    </div>
+  </div>
+  <div class="header-right">
+    <div class="status-item">
+      <div class="dot checking" id="dot"></div>
+      <span id="status-text" style="font-family:var(--font-mono);font-size:11px;color:var(--text3);letter-spacing:1px">CHECKING</span>
+    </div>
+    <select class="model-sel" id="model-sel"></select>
+    <button class="clear-btn" onclick="clearChat()">CLEAR</button>
+  </div>
+</header>
+
+<div class="main">
+  <aside class="sidebar">
+    <div class="sb-section">
+      <div class="sb-label">QUICK TASKS</div>
+      <button class="qbtn" onclick="quick('Search the web for latest AI news today')"><span class="qi">🔍</span>Web Search</button>
+      <button class="qbtn" onclick="quick('Write a Python script to ')"><span class="qi">🐍</span>Python Code</button>
+      <button class="qbtn" onclick="quick('Debug this error and fix it:\n\n')"><span class="qi">🐛</span>Debug Error</button>
+      <button class="qbtn" onclick="quick('Research and give me a detailed summary about: ')"><span class="qi">📚</span>Research</button>
+      <button class="qbtn" onclick="quick('Create a full step-by-step plan to build: ')"><span class="qi">📋</span>Plan Project</button>
+      <button class="qbtn" onclick="quick('Explain step by step how this works: ')"><span class="qi">💡</span>Explain Topic</button>
+      <button class="qbtn" onclick="quick('Write unit tests for this Python code:\n\n')"><span class="qi">✅</span>Write Tests</button>
+      <button class="qbtn" onclick="quick('Review my code and suggest improvements:\n\n')"><span class="qi">👁</span>Code Review</button>
+    </div>
+    <div class="sb-section">
+      <div class="sb-label">SESSION</div>
+      <div class="stat-grid">
+        <div class="stat-box"><div class="stat-val" id="s-msgs">0</div><div class="stat-lbl">MESSAGES</div></div>
+        <div class="stat-box"><div class="stat-val" id="s-words">0</div><div class="stat-lbl">WORDS</div></div>
+      </div>
+    </div>
+    <div class="sb-section">
+      <div class="sb-label">SYSTEM</div>
+      <div class="info-row">
+        GPU: <span style="color:var(--accent)">RTX 3050</span><br>
+        RAM: <span style="color:var(--accent)">64 GB</span><br>
+        ENGINE: <span style="color:var(--accent)">OLLAMA</span><br>
+        COST: <span style="color:var(--green)">FREE</span>
+      </div>
+    </div>
+  </aside>
+
+  <div class="chat-area">
+    <div class="messages" id="messages">
+      <div class="welcome" id="welcome">
+        <div class="welcome-ring">
+          <svg viewBox="0 0 90 90" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="45" cy="45" r="42" stroke="rgba(56,189,248,0.2)" stroke-width="1.5" stroke-dasharray="6 4"/>
+            <circle cx="45" cy="45" r="32" stroke="rgba(56,189,248,0.35)" stroke-width="1" stroke-dasharray="3 5"/>
+            <circle cx="45" cy="45" r="22" stroke="rgba(56,189,248,0.5)" stroke-width="1" stroke-dasharray="2 3"/>
+            <circle cx="45" cy="4" r="3" fill="#38bdf8"/>
+            <circle cx="86" cy="45" r="3" fill="#38bdf8"/>
+            <circle cx="45" cy="86" r="2" fill="rgba(56,189,248,0.4)"/>
+            <circle cx="4" cy="45" r="2" fill="rgba(56,189,248,0.4)"/>
+          </svg>
+          <div class="welcome-core"></div>
+        </div>
+        <h2>JARVIS ONLINE</h2>
+        <p>Your personal AI is running locally.<br>No API keys. No cost. No limits.</p>
+        <div class="chips">
+          <span class="chip" onclick="send('Build a REST API with Flask and SQLite')">Build a REST API</span>
+          <span class="chip" onclick="send('What are the latest trends in AI in 2025?')">Latest AI trends</span>
+          <span class="chip" onclick="send('Write a Python script to rename all files in a folder')">Automate file tasks</span>
+          <span class="chip" onclick="send('Plan a full-stack web project for a student portfolio')">Plan a project</span>
+          <span class="chip" onclick="send('Explain how neural networks work step by step')">How neural nets work</span>
+          <span class="chip" onclick="send('Write a Python class for a simple todo app with SQLite')">Todo app in Python</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="input-area">
+      <div class="input-row">
+        <button class="mic-btn" id="mic-btn" onclick="toggleMic()" title="Voice input">🎤</button>
+        <div class="input-wrap">
+          <textarea id="inp" rows="1" placeholder="// ask jarvis anything..." onkeydown="handleKey(event)" oninput="resizeTA(this)"></textarea>
+        </div>
+        <button class="send-btn" id="send-btn" onclick="sendMsg()">
+          <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+        </button>
+      </div>
+      <div class="input-footer">
+        <span class="hint">ENTER to send · SHIFT+ENTER for new line</span>
+        <span class="hint" id="char-count">0 chars</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  const API = "http://localhost:5000";
+  let history = [], msgCount = 0, wordCount = 0, generating = false;
+
+  async function checkStatus() {
+    const dot = document.getElementById("dot");
+    const st  = document.getElementById("status-text");
+    const sel = document.getElementById("model-sel");
+    try {
+      const r = await fetch(API + "/api/status");
+      const d = await r.json();
+      if (d.status === "online") {
+        dot.className = "dot online";
+        st.textContent = "ONLINE";
+        st.style.color = "var(--green)";
+        if (d.models && d.models.length > 0) {
+          const cur = sel.value;
+          sel.innerHTML = "";
+          d.models.forEach(m => {
+            const o = document.createElement("option");
+            o.value = m; o.textContent = m;
+            if (m === cur) o.selected = true;
+            sel.appendChild(o);
+          });
+        } else { addDefaults(sel); }
+      } else { throw new Error(); }
+    } catch {
+      dot.className = "dot offline";
+      st.textContent = "OFFLINE";
+      st.style.color = "var(--red)";
+      if (!sel.options.length) addDefaults(sel);
+    }
+  }
+
+  function addDefaults(sel) {
+    ["llama3.1","llama3.1:13b","deepseek-coder-v2","mistral","phi3:mini"].forEach(m => {
+      const o = document.createElement("option");
+      o.value = m; o.textContent = m; sel.appendChild(o);
+    });
+  }
+
+  checkStatus();
+  setInterval(checkStatus, 10000);
+
+  async function sendMsg() {
+    const inp  = document.getElementById("inp");
+    const text = inp.value.trim();
+    if (!text || generating) return;
+    const welcome = document.getElementById("welcome");
+    if (welcome) welcome.remove();
+    generating = true;
+    document.getElementById("send-btn").disabled = true;
+    addMsg("user", text);
+    history.push({ role: "user", content: text });
+    inp.value = ""; inp.style.height = "auto";
+    document.getElementById("char-count").textContent = "0 chars";
+    const tid = showTyping();
+    try {
+      const model = document.getElementById("model-sel").value;
+      const res = await fetch(API + "/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ messages: history, model })
+      });
+      removeTyping(tid);
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+      history.push({ role: "assistant", content: data.reply });
+      addMsg("ai", data.reply);
+      wordCount += data.reply.split(/\s+/).length;
+      document.getElementById("s-words").textContent = wordCount > 999 ? (wordCount/1000).toFixed(1)+"k" : wordCount;
+    } catch (err) {
+      removeTyping(tid);
+      addMsg("ai", "Error: " + err.message, true);
+      showToast(err.message);
+    }
+    generating = false;
+    document.getElementById("send-btn").disabled = false;
+    inp.focus();
+  }
+
+  function send(text)  { document.getElementById("inp").value = text; sendMsg(); }
+  function quick(text) { const i = document.getElementById("inp"); i.value = text; resizeTA(i); i.focus(); }
+
+  function addMsg(role, text, isErr = false) {
+    const c = document.getElementById("messages");
+    const div = document.createElement("div");
+    div.className = "msg " + role;
+    const av = document.createElement("div");
+    av.className = "avatar";
+    av.textContent = role === "user" ? "YOU" : "J.A.I";
+    const inner = document.createElement("div");
+    const bub = document.createElement("div");
+    bub.className = "bubble";
+    if (isErr) bub.style.borderColor = "var(--red)";
+    bub.innerHTML = fmt(text);
+    const meta = document.createElement("div");
+    meta.className = "msg-meta";
+    const n = new Date();
+    meta.textContent = String(n.getHours()).padStart(2,"0") + ":" + String(n.getMinutes()).padStart(2,"0");
+    inner.appendChild(bub); inner.appendChild(meta);
+    div.appendChild(av); div.appendChild(inner);
+    c.appendChild(div); c.scrollTop = c.scrollHeight;
+    msgCount++;
+    document.getElementById("s-msgs").textContent = msgCount;
+  }
+
+  function fmt(t) {
+    t = t.replace(/```(\w*)\n?([\s\S]*?)```/g, (_,l,c) => "<pre><code>" + esc(c.trim()) + "</code></pre>");
+    t = t.replace(/`([^`\n]+)`/g, "<code>$1</code>");
+    t = t.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>");
+    t = t.replace(/^### (.*)/gm, '<div style="font-size:15px;font-weight:600;color:var(--accent3);margin:10px 0 4px">$1</div>');
+    t = t.replace(/^## (.*)/gm,  '<div style="font-size:16px;font-weight:600;color:var(--accent);margin:12px 0 5px">$1</div>');
+    t = t.replace(/^[-*] (.*)/gm, "<li>$1</li>");
+    t = t.replace(/^\d+\. (.*)/gm, "<li>$1</li>");
+    t = t.replace(/\n(?!<)/g, "<br>");
+    return t;
+  }
+  function esc(t) { return t.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+
+  function showTyping() {
+    const id = "t" + Date.now();
+    const c = document.getElementById("messages");
+    const div = document.createElement("div");
+    div.id = id; div.className = "typing";
+    div.innerHTML = '<div class="avatar" style="width:32px;height:32px;border-radius:5px;display:flex;align-items:center;justify-content:center;font-family:var(--font-d);font-size:9px;font-weight:700;background:rgba(56,189,248,.06);border:1px solid var(--border);color:var(--accent3);flex-shrink:0">J.A.I</div><div class="typing-bubble"><div class="tdot"></div><div class="tdot"></div><div class="tdot"></div><span class="typing-lbl">THINKING</span></div>';
+    c.appendChild(div); c.scrollTop = c.scrollHeight;
+    return id;
+  }
+  function removeTyping(id) { const e = document.getElementById(id); if (e) e.remove(); }
+
+  function clearChat() {
+    history = []; msgCount = 0; wordCount = 0;
+    document.getElementById("s-msgs").textContent = "0";
+    document.getElementById("s-words").textContent = "0";
+    document.getElementById("messages").innerHTML = '<div class="welcome" id="welcome"><div class="welcome-ring"><svg viewBox="0 0 90 90" fill="none"><circle cx="45" cy="45" r="42" stroke="rgba(56,189,248,0.2)" stroke-width="1.5" stroke-dasharray="6 4"/><circle cx="45" cy="45" r="32" stroke="rgba(56,189,248,0.35)" stroke-width="1" stroke-dasharray="3 5"/><circle cx="45" cy="5" r="3" fill="#38bdf8"/><circle cx="85" cy="45" r="3" fill="#38bdf8"/></svg><div class="welcome-core"></div></div><h2>SESSION CLEARED</h2><p>Ready for new commands.</p></div>';
+  }
+
+  function handleKey(e) { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMsg(); } }
+  function resizeTA(el) { el.style.height = "auto"; el.style.height = Math.min(el.scrollHeight,150)+"px"; document.getElementById("char-count").textContent = el.value.length + " chars"; }
+  function showToast(msg) { const t = document.getElementById("toast"); t.textContent = "Error: " + msg; t.classList.add("show"); setTimeout(() => t.classList.remove("show"), 4000); }
+
+  let recognition = null, listening = false;
+  function toggleMic() {
+    if (!("webkitSpeechRecognition" in window || "SpeechRecognition" in window)) { showToast("Voice needs Chrome browser"); return; }
+    if (listening) { recognition?.stop(); return; }
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    recognition = new SR();
+    recognition.lang = "en-US";
+    recognition.onstart = () => { listening = true; document.getElementById("mic-btn").classList.add("listening"); };
+    recognition.onresult = e => { const i = document.getElementById("inp"); i.value = e.results[0][0].transcript; resizeTA(i); };
+    recognition.onend = () => { listening = false; document.getElementById("mic-btn").classList.remove("listening"); };
+    recognition.start();
+  }
+
+  document.getElementById("inp").focus();
+</script>
+</body>
+</html>
