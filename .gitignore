@@ -1,1 +1,5 @@
-venv/ __pycache__/ *.pyc jarvis_memory_db/ .env
+venv
+__pycache__
+*.pyc
+jarvis_memory_db
+.env
